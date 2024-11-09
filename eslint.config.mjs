@@ -5,18 +5,19 @@ import tseslint from "typescript-eslint";
 
 import apiRules from "./plugins/the-api-rules/index.mjs";
 
-import pkg from '@typescript-eslint/parser';
-const { parser } = pkg;
+import parser from '@typescript-eslint/parser';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    files: ["tests/*"],
+    files: ["tests/*.ts"],
     languageOptions: {
-      parser: parser,
+      parser: {meta: parser.meta, parseForESLint: parser.parseForESLint},
       parserOptions: {
         ecmaVersion: 2022,
-        sourceType: "module",
+        sourceType: "module", 
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
         project: './tsconfig.json', // Ensure this path is correct
       },
       globals: globals.es2022,
@@ -27,7 +28,5 @@ export default [
     rules: {
       "@the-api-rules/apis-privileges": "error",
     },
-  },
-  ...tseslint.configs.recommended,
-  //pluginJs.configs.recommended
+  }
 ];

@@ -1,6 +1,12 @@
-//import * as ts from 'typescript';
+import * as ts from 'typescript';
+import { ESLintUtils } from '@typescript-eslint/utils';
 
-export default {
+const createRule = ESLintUtils.RuleCreator(
+  name => `https://example.com/rule/${name}`,
+);
+
+
+export default createRule({
   meta: {
     type: "problem",
     docs: {
@@ -11,27 +17,32 @@ export default {
     schema: []
   },
   create(context) {
-    //const parserServices = context.parserServices;
-    /*if (!parserServices || !parserServices.program) {
+    const parserServices = ESLintUtils.getParserServices(context);
+    if (!parserServices || !parserServices.program) {
       console.error("Faild to load " + import.meta.filename);
       return {}; 
       // If parserServices is not available, return an empty object
     }
     //const checker = parserServices.program.getTypeChecker();
-    */
+
     console.log("Done!!:");
     return {
       Identifier(node) {
-        /*
-        const tsNode = parserServices.esTreeNodeToTSNodeMap.get(node);
-        const type = checker.getTypeAtLocation(tsNode);
-        const typeName = checker.typeToString(type);
-        */
+        // 2. Find the TS type for the ES node
+        const type = parserServices.getTypeAtLocation(node);
+
+        console.log(type.symbol);
+        // 3. Check the TS type's backing symbol for being an enum
+        let parent = type.symbol;
+        while(parent?.parent?.escapedName?.includes?.("@minecraft/") === false) parent = parent?.parent;
+        
+        if(!parent?.parent) return;
         context.report({
           node,
-          message: `Identifier '${node.name}' has type: ${"LMAO HAHAHA"}`
+          message: `Identifier '${node.name}' is from our module ${parent?.parent?.name?.match(/@minecraft\/[^ \/]+/g)}`
         });
       }
     };
-  }
-};
+  },
+  defaultOptions: []
+});
