@@ -1,4 +1,4 @@
-import privileges from "./apis-privileges.mjs";
+import privileges from "./rules/api-privileges";
 
 export default {
     rules:{

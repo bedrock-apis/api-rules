@@ -1,11 +1,6 @@
 import globals from "globals";
-//import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-
-
-import apiRules from "./plugins/the-api-rules/index.mjs";
-
 import parser from '@typescript-eslint/parser';
+import theAPIRules from "./dist/index.js";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -23,7 +18,7 @@ export default [
       globals: globals.es2022,
     },
     plugins: {
-      "@the-api-rules": apiRules,
+      "@the-api-rules": theAPIRules,
     },
     rules: {
       "@the-api-rules/apis-privileges": "error",

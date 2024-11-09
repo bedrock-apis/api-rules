@@ -10,6 +10,6 @@ function test(){
     a.resolve("text");
     
     test();
-
+    
     fakeResolve("text");
 }

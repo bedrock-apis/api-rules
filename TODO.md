@@ -4,10 +4,13 @@
   - [X] **API Method Call Rule**: Create rules to validate API method calls based on context.
 
 - [ ] **Privileges Logic** *(Stage 2)*
+  - [X] **Type Script Migration**: Use TypeScript for development of our ESLint Plugin
+  - [X] **Use Rolldown Bundler**: Bundler Our Plugin as single file 
   - [ ] **Caching Method Calls**: Implement a mechanism to cache method calls and resolve them after their declarations are processed.
   - [ ] **Load Privileges for API Modules**: Develop logic to load and manage privileges for various API modules.
   - [ ] **Testing `test` Method Without Privileges**: Ensure that calls to the `test` method fail as hardcoded privileges are `none`.
   - [ ] **Testing `test` Method in Privileged Contexts**: Validate that the `test` method works correctly within privileged contexts.
+  - [X] **Add More Specific Tests**: Add basic tests for cases where it should error and where not
 
 - [ ] **Release Alpha Version** *(Stage 3)*
   - [ ] **Implement `test` Logic for API Calls**: Develop the `test` logic, for API functions calls.
