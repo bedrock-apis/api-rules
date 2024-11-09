@@ -27,11 +27,10 @@ export default createRule({
 
     console.log("Done!!:");
     return {
-      Identifier(node) {
+      "CallExpression"(node){
         // 2. Find the TS type for the ES node
         const type = parserServices.getTypeAtLocation(node);
-
-        console.log(type.symbol);
+        
         // 3. Check the TS type's backing symbol for being an enum
         let parent = type.symbol;
         while(parent?.parent?.escapedName?.includes?.("@minecraft/") === false) parent = parent?.parent;
@@ -39,8 +38,9 @@ export default createRule({
         if(!parent?.parent) return;
         context.report({
           node,
-          message: `Identifier '${node.name}' is from our module ${parent?.parent?.name?.match(/@minecraft\/[^ \/]+/g)}`
+          message: `Identifier '${type.symbol.name}' is from our module ${parent?.parent?.name?.match(/@minecraft\/[^ \/]+/g)}`
         });
+
       }
     };
   },
