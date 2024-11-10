@@ -1,7 +1,7 @@
 import { world } from "@minecraft/server";
 
-world.beforeEvents.playerBreakBlock.subscribe((e)=>{
-    e.block.setPermutation("");
+world.beforeEvents.playerBreakBlock.subscribe(async (e)=>{
+    e.block.setType("");
     await null;
-    e.block.setPermutation("");
+    e.block.setType("");
 });
