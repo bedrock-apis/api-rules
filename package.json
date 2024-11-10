@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "npx rolldown -c ./.configs/rolldown.config.js",
-    "lint": "npx eslint --config ./.configs/eslint.config.js",
+    "build": "npx rolldown -c ./rolldown.config.js",
+    "lint": "npx eslint --config ./eslint.config.js",
     "test": "npm run build && npm run lint"
   },
   "authors": [

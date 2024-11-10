@@ -1,53 +1,62 @@
-import * as ts from 'typescript';
+//import * as ts from 'typescript';
 import { ESLintUtils } from '@typescript-eslint/utils';
 
-type MessageIds = 'no-privilege' | 'none';
-type Options = any[];
-type Docs = {
-    description: string,
-    recommended: boolean
+
+// Required messages for this rule
+const MESSAGES = {
+  'no-privilege':"`{{method}}` doesn't have privileges to be executed in this context.",
+  "none":"No error"
 };
-const createRule = ESLintUtils.RuleCreator<Docs>(
+
+// Rule Docs I am not sure what it does
+const DOCS = {
+  description: "Some description",
+}
+
+// Rule helper
+// This rule helper, improves the created context and binds it to TS AST tree,
+// so we can refer types for specific nodes
+const createRule = ESLintUtils.RuleCreator<typeof DOCS>(
   name => `https://example.com/rule/${name}`,
 );
 
-
-export default createRule<Options, MessageIds>({
+// Export our rule
+export default createRule<any[], keyof typeof MESSAGES>({
     name: "",
     meta: {
         type: "problem",
-        docs: {
-        description: "Enforces type checking on closures",
-        recommended: true
-        },
+        docs: DOCS,
         schema: [],
-        messages:{
-            "no-privilege":"`{{method}}` doesn't have privileges to be executed in this context.",
-            "none":"No error"
-        }
+        messages: MESSAGES
     },
   create(context) {
+    // Get Parser Service
     const parserServices = ESLintUtils.getParserServices(context);
+    
+    // Report the load fail
     if (!parserServices || !parserServices.program) {
       console.error("Faild to load ");
-      return {}; 
       // If parserServices is not available, return an empty object
+      return {}; 
     }
-    //const checker = parserServices.program.getTypeChecker();
 
-    console.log("Done!!:");
     return {
+      // This expression is general for calls
       "CallExpression"(node){
-        // 2. Find the TS type for the ES node
+        // 1. Find the TS type for the ES node
         const type = parserServices.getTypeAtLocation(node.callee);
 
-        // 3. Check the TS type's backing symbol for being an enum
+        // 2. Check the TS type's backing symbol for being an enum
+        // parent of symbols are not exposed so we have to cast it to any
         let parent: any = type.symbol;
-        //? But it does exists
+
+        //Check for the root symbol to match a native lib names
         while(parent?.parent?.escapedName?.includes?.("@minecraft/") === false) parent = parent?.parent;
         
+        // Check if we success with founding root parent
         if(!parent?.parent) return;
 
+        // Report No privilege
         context.report({
           node,
           messageId: "no-privilege",
