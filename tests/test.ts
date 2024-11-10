@@ -1,5 +1,11 @@
 import {BlockPermutation} from "@minecraft/server";
 
+test();
+bob();
+await null;
+test();
+
+
 function test(){
     BlockPermutation.resolve("bedrock");
     
@@ -12,4 +18,8 @@ function test(){
     test();
     
     fakeResolve("text");
+}
+
+function bob(){
+
 }

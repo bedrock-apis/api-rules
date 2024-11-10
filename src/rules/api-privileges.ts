@@ -1,16 +1,5 @@
-//import * as ts from 'typescript';
+import { Type } from 'typescript';
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
-
-enum ExecutionPrivilage {
-  All = "all",
-  ReadOnly = "read_only",
-  EarlyExecution = 'early_execution',
-}
-enum DeclarationPrivilege {
-  None = 'none',
-  ReadOnly = 'read_only',
-  EarlyExecution = 'early_execution',
-}
 
 // Required messages for this rule
 const MESSAGES = {
@@ -29,6 +18,8 @@ const DOCS = {
 const createRule = ESLintUtils.RuleCreator<typeof DOCS>(
   name => `https://example.com/rule/${name}`,
 );
+/*
+const DECLARATIONS = new WeakMap();
 
 const functionNodeTypes = new Set([
   TSESTree.AST_NODE_TYPES.ArrowFunctionExpression,
@@ -37,11 +28,31 @@ const functionNodeTypes = new Set([
   TSESTree.AST_NODE_TYPES.MethodDefinition,
 ]);
 
+
+    const topLevelFunctions = new Set<FunctionType>();
+    function isTopLevelCall(node: TSESTree.CallExpression): boolean {
+      let current: TSESTree.Node | undefined = node;
+      while (current) {
+        if (current.type === TSESTree.AST_NODE_TYPES.Program) {
+          return true;
+        }
+        if (topLevelFunctions.has(current as any)) {
+          return true;
+        }
+        if (functionNodeTypes.has(current.type)) {
+          return false;
+        }
+        current = current.parent;
+      }
+      return false;
+    }
+
 type FunctionType =
   | TSESTree.ArrowFunctionExpression
   | TSESTree.FunctionDeclaration
   | TSESTree.FunctionExpression
-  | TSESTree.MethodDefinition;
+  | TSESTree.MethodDefinition;*/
+
 
 // Export our rule
 export default createRule<any[], keyof typeof MESSAGES>({
@@ -65,73 +76,96 @@ export default createRule<any[], keyof typeof MESSAGES>({
       // If parserServices is not available, return an empty object
       return {}; 
     }
-    // const checker = parserServices.program.getTypeChecker();
 
-    const topLevelFunctions = new Set<FunctionType>();
-
-    function isTopLevelCall(node: TSESTree.CallExpression): boolean {
-      let current: TSESTree.Node | undefined = node;
-      while (current) {
-        if (current.type === TSESTree.AST_NODE_TYPES.Program) {
-          return true;
-        }
-        if (topLevelFunctions.has(current as any)) {
-          return true;
-        }
-        if (functionNodeTypes.has(current.type)) {
-          return false;
-        }
-        current = current.parent;
-      }
-      return false;
-    }
-
-        
     function getScope(node: TSESTree.Node): null | Scope
     {
       let parent = node.parent;
+      // Loop throu the Node Tree to found the scope where the node is
       while(!SCOPES.has(parent!)) parent = parent?.parent;
+      // If scope was founded
       if(parent) return SCOPES.get(parent)!;
+      // No scope found
       else return null;
+    }
+
+    function isNative(parent: Type["symbol"]){
+        //Check for the root symbol to match a native lib names
+        while((parent as any)?.parent?.escapedName?.includes?.("@minecraft/") === false) parent = (parent as any)?.parent;
+        // Check if we success with founding root parent
+        return !!((parent as any)?.parent);
+    }
+
+    function getPrivileges(parent: Type["symbol"]){
+      return [isNative(parent)?DeclarationPrivilege.ReadOnly:DeclarationPrivilege.None];
+    }
+
+    function hasPrivilege(executionPrivilege: ExecutionPrivilage, declerationPrivileges: DeclarationPrivilege[]){
+      if(executionPrivilege === ExecutionPrivilage.All) return true;
+      
+      return declerationPrivileges.includes((executionPrivilege as any));
     }
 
     return {
       "Program"(node){ // :eyes:
-        SCOPES.set(node, new Scope(node, ExecutionPrivilage.EarlyExecution));
+        //Create Hardcoded Scope
+        const scope = new Scope(node, ExecutionPrivilage.EarlyExecution, false);
+
+        // Register new Scope
+        SCOPES.set(node, scope);
+      },
+      "FunctionDeclaration"(node){
+        // 1. Find the TS type for this Function Declaration
+        const type = parserServices.getTypeAtLocation(node);
+
+        //Create Scope
+        const scope = new Scope(node, ExecutionPrivilage.All, true);
+
+        // Assign Symbol
+        scope.symbol = type.symbol;
+
+        // Register new Scope
+        SCOPES.set(node, scope);
       },
       "AwaitExpression"(node){
         const scope = getScope(node);
         if(!scope) return;
-        scope.execution_privilege = ExecutionPrivilage.All;
+        scope.executionPrivilege = ExecutionPrivilage.All;
       },
       // This expression is general for calls
       "CallExpression"(node){
 
         const scope = getScope(node);
-        if(!scope || scope.execution_privilege === ExecutionPrivilage.All) return;
+        if(!scope) return;
+        // should I conbine methods/props in map?
+        // Yes methods and properties to gether
+        // ok
+        
 
         // 1. Find the TS type for the ES node
-        const caleeType = parserServices.getTypeAtLocation(node.callee);
+        const calleeType = parserServices.getTypeAtLocation(node.callee);
 
-        // 2. Check the TS type's backing symbol for being an enum
-        // parent of symbols are not exposed so we have to cast it to any
-        let parent: any = caleeType.symbol;
-
-        //Check for the root symbol to match a native lib names
-        while(parent?.parent?.escapedName?.includes?.("@minecraft/") === false) parent = parent?.parent;
+        const privileges = getPrivileges(calleeType.symbol);
         
-        // Check if we success with founding root parent
-        if(!parent?.parent) return;
 
-        const parentType = parserServices.getTypeAtLocation((caleeType.symbol as any).parent);
-        //console.log(caleeType.symbol.name, isTopLevelCall(node));
+
+        if(scope.hasImplementation) {
+          for(const privilege of privileges){
+            if(scope.declarationPrivileges.includes(privilege)) continue;
+            scope.declarationPrivileges.push(privilege);
+          }
+          return;
+        }
+
+        if(hasPrivilege(scope.executionPrivilege, privileges)){
+          return;
+        }
 
         // Report No privilege
         context.report({
           node,
           messageId: "no-privilege",
           data:{
-            method: caleeType.symbol.name,
+            method: calleeType.symbol.name,
           }
         });
       }
@@ -141,10 +175,20 @@ export default createRule<any[], keyof typeof MESSAGES>({
 });
 
 class Scope{
-  public execution_privilege = ExecutionPrivilage.All;
-  public node;
-  public constructor(node: TSESTree.Node, privilege = ExecutionPrivilage.All){
+  // Context Scope Privilege
+  public executionPrivilege = ExecutionPrivilage.All;
+  // Context Scope Privilege
+  public declarationPrivileges = [DeclarationPrivilege.None];
+
+  // AST Node
+  public node: TSESTree.Node;
+  
+  public symbol?: Type["symbol"];
+  // When method or function has declaration known to ESLint 
+  public readonly hasImplementation: boolean;
+  public constructor(node: TSESTree.Node, privilege = ExecutionPrivilage.All, hasImplementation = true){
     this.node = node;
-    this.execution_privilege = privilege;
+    this.executionPrivilege = privilege;
+    this.hasImplementation = hasImplementation;
   }
 }

@@ -6,10 +6,10 @@
 - [ ] **Privileges Logic** *(Stage 2)*
   - [X] **Type Script Migration**: Use TypeScript for development of our ESLint Plugin.
   - [X] **Use Rolldown Bundler**: Bundler Our Plugin as single file.
-  - [ ] **Well Commented Code**: Conmaster have to comment the code better.
+  - [X] **Well Commented Code**: Conmaster have to comment the code better.
   - [ ] **Caching Method Calls**: Implement a mechanism to cache method calls and resolve them after their declarations are processed.
   - [ ] **Load Privileges for API Modules**: Develop logic to load and manage privileges for various API modules.
-  - [ ] **Testing `test` Method Without Privileges**: Ensure that calls to the `test` method fail as hardcoded privileges are `none`.
+  - [X] **Testing `test` Method Without Privileges**: Ensure that calls to the `test` method fail as hardcoded privileges are `none`.
   - [ ] **Testing `test` Method in Privileged Contexts**: Validate that the `test` method works correctly within privileged contexts.
 
 - [ ] **Release Alpha Version** *(Stage 3)*
@@ -17,7 +17,7 @@
   - [X] **Add More Specific Tests**: Add basic tests for cases where it should error and where not
 
 - [ ] **Release Beta Version** *(Stage 4)*
-  - [ ] **Implement Async Command Handling**: Add support for async commands using `await null;` expressions to enforce asynchronous execution.
+  - [ ] **Implement Async Execution Handling**: Add support for async commands using `await null;` expressions to enforce asynchronous execution.
   - [ ] **Implement Checks for Generator Methods**: Develop checks for generator function instances to ensure they adhere to context privileges.
   - [ ] **Internal Testing**: Conduct initial testing of the new rules internally to identify any immediate issues.
   - [ ] **Setup Guide**: Create preliminary setup guide for the beta version to help testers understand the new features.
