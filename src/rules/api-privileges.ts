@@ -1,5 +1,8 @@
 import { Type } from 'typescript';
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
+import { ScopeDefinition, Privilege, PrivilegeType } from '../privileges';
+// import { MetadataLoader } from '../metadata';
+
 
 // Required messages for this rule
 const MESSAGES = {
@@ -64,7 +67,10 @@ export default createRule<any[], keyof typeof MESSAGES>({
         messages: MESSAGES
     },
   create(context) {
-    const SCOPES = new Map<TSESTree.Node, Scope>();
+    // const loader = new MetadataLoader();
+    // loader.hasPrivilege(PrivilegeType.ReadOnly, 'BlockPermutation.resolve', '@minecraft/server')
+
+    const SCOPES = new Map<TSESTree.Node, ScopeDefinition>();
     console.log(context.filename);
     
     // Get Parser Service
@@ -77,8 +83,7 @@ export default createRule<any[], keyof typeof MESSAGES>({
       return {}; 
     }
 
-    function getScope(node: TSESTree.Node): null | Scope
-    {
+    function getScope(node: TSESTree.Node): ScopeDefinition | null {
       let parent = node.parent;
       // Loop throu the Node Tree to found the scope where the node is
       while(!SCOPES.has(parent!)) parent = parent?.parent;
@@ -96,19 +101,18 @@ export default createRule<any[], keyof typeof MESSAGES>({
     }
 
     function getPrivileges(parent: Type["symbol"]){
-      return [isNative(parent)?DeclarationPrivilege.ReadOnly:DeclarationPrivilege.None];
+      return isNative(parent)?Privilege.None():Privilege.All();
     }
 
-    function hasPrivilege(executionPrivilege: ExecutionPrivilage, declerationPrivileges: DeclarationPrivilege[]){
-      if(executionPrivilege === ExecutionPrivilage.All) return true;
-      
-      return declerationPrivileges.includes((executionPrivilege as any));
-    }
-
+    const afterChecks = [];
     return {
-      "Program"(node){ // :eyes:
+      "Program:exit"(){
+
+      },
+      "Program"(node){
         //Create Hardcoded Scope
-        const scope = new Scope(node, ExecutionPrivilage.EarlyExecution, false);
+        const scope = new ScopeDefinition(node);
+        scope.executionPrivilege = new Privilege(PrivilegeType.EarlyExecution);
 
         // Register new Scope
         SCOPES.set(node, scope);
@@ -118,9 +122,11 @@ export default createRule<any[], keyof typeof MESSAGES>({
         const type = parserServices.getTypeAtLocation(node);
 
         //Create Scope
-        const scope = new Scope(node, ExecutionPrivilage.All, true);
-
-        // Assign Symbol
+        const scope = new ScopeDefinition(node);
+        
+        // Assign required properties
+        scope.hasDeclaration = true;
+        scope.executionPrivilege = new Privilege(PrivilegeType.All);
         scope.symbol = type.symbol;
 
         // Register new Scope
@@ -129,37 +135,32 @@ export default createRule<any[], keyof typeof MESSAGES>({
       "AwaitExpression"(node){
         const scope = getScope(node);
         if(!scope) return;
-        scope.executionPrivilege = ExecutionPrivilage.All;
+        scope.hasBeenAwaited = true;
       },
       // This expression is general for calls
       "CallExpression"(node){
 
         const scope = getScope(node);
-        if(!scope) return;
-        // should I conbine methods/props in map?
-        // Yes methods and properties to gether
-        // ok
-        
+        if(!scope) return;        
 
         // 1. Find the TS type for the ES node
         const calleeType = parserServices.getTypeAtLocation(node.callee);
 
-        const privileges = getPrivileges(calleeType.symbol);
+        if(!isNative(calleeType.symbol)) {}
+
+        const privilege = getPrivileges(calleeType.symbol);
         
+        // Everything is possible after await expression
+        if(scope.hasBeenAwaited) return;
 
-
-        if(scope.hasImplementation) {
-          for(const privilege of privileges){
-            if(scope.declarationPrivileges.includes(privilege)) continue;
-            scope.declarationPrivileges.push(privilege);
-          }
+        if(scope.hasDeclaration) {
+          scope.executionPrivilege.marge(privilege);
           return;
         }
-
-        if(hasPrivilege(scope.executionPrivilege, privileges)){
+        else if(scope.executionPrivilege.canExecute(privilege)){
           return;
         }
-
+        
         // Report No privilege
         context.report({
           node,
@@ -173,22 +174,3 @@ export default createRule<any[], keyof typeof MESSAGES>({
   },
   defaultOptions: []
 });
-
-class Scope{
-  // Context Scope Privilege
-  public executionPrivilege = ExecutionPrivilage.All;
-  // Context Scope Privilege
-  public declarationPrivileges = [DeclarationPrivilege.None];
-
-  // AST Node
-  public node: TSESTree.Node;
-  
-  public symbol?: Type["symbol"];
-  // When method or function has declaration known to ESLint 
-  public readonly hasImplementation: boolean;
-  public constructor(node: TSESTree.Node, privilege = ExecutionPrivilage.All, hasImplementation = true){
-    this.node = node;
-    this.executionPrivilege = privilege;
-    this.hasImplementation = hasImplementation;
-  }
-}
