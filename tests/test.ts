@@ -1,25 +1,33 @@
 import {BlockPermutation} from "@minecraft/server";
 
-test();
-bob();
+// Should Error
+MethodCallsAPI();
+
+// No Error
+EmptyMethod();
+
+// Should Error as it calls MethodCallsAPI
+MethodCallsMethodThatCallsAPI();
+
+// Shouldn't Error as it calls MethodCallsAPI after await expression
+MethodThatAwaitsAndCallsMethodThatCallsAPI();
 await null;
-test();
+MethodCallsAPI();
 
-
-function test(){
-    BlockPermutation.resolve("bedrock");
-    
-
-    const a = BlockPermutation;
-    const fakeResolve = a.resolve;
-    
-    a.resolve("text");
-    
-    test();
-    
-    fakeResolve("text");
+function MethodCallsMethodThatCallsAPI(){
+    MethodCallsAPI();
 }
 
-function bob(){
+function EmptyMethod(){}
 
+async function MethodThatAwaitsAndCallsMethodThatCallsAPI(){
+    await null;
+    MethodCallsAPI();
+}
+
+function MethodCallsAPI(){
+    BlockPermutation.resolve("bedrock");
+    
+    // Recursive
+    MethodCallsAPI();
 }

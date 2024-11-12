@@ -62,4 +62,7 @@ export class ScopeDefinition {
     public constructor(node: TSESTree.Node){
         this.node = node;
     }
+    public toString(){
+        return `[Object Privilege: {${[...this.executionPrivilege.privilegeTypes].join(", ")}}]`
+    }
 }

@@ -7,7 +7,7 @@ import type { RuleContext } from '@typescript-eslint/utils/dist/ts-eslint';
 
 // Required messages for this rule
 const MESSAGES = {
-  'no-privilege':"`{{method}}` doesn't have privileges to be executed in this context.",
+  'no-privilege':"'{{method-name}}' doesn't have '{{required-privilege}}' privilege to be executed in this context.\n Method privilege: '{{has-privilege}}'",
   "none":"No error"
 };
 
@@ -49,15 +49,11 @@ export default createRule<any[], keyof typeof MESSAGES>({
 
     return {
       "Program:exit"(){
-        PROGRAM_CONTEXT.resolveAll();
+        PROGRAM_CONTEXT.resolveAll('no-privilege');
       },
       "Program"(node){
-        // 1. Find the TS type for this Function Declaration
-        const type = parserServices.getTypeAtLocation(node);
-
         //Create Hardcoded Scope
-        const scope = PROGRAM_CONTEXT.tryCreate(node, type.symbol);
-
+        const scope = PROGRAM_CONTEXT.setTopLevel(node);
         // Set scope execution privilege
         scope.executionPrivilege = new Privilege(PrivilegeType.EarlyExecution);
       },
@@ -115,7 +111,9 @@ export default createRule<any[], keyof typeof MESSAGES>({
           node,
           messageId: "no-privilege",
           data:{
-            method: calleeType.symbol.name,
+            "has-privilege": [...privilege.privilegeTypes].join(", "),
+            "required-privilege": [...scope.executionPrivilege.privilegeTypes].join(", "),
+            "method-name": calleeType.symbol.name,
           }
         });
       }
