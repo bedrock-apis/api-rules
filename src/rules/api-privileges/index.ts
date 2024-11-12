@@ -33,20 +33,25 @@ export default createRule<any[], keyof typeof MESSAGES>({
         messages: MESSAGES
     },
   create(context) {
-
+    console.log("New context created");
     // Create New Context
     const PROGRAM_CONTEXT = new ProgramContext(context);
 
     // Get Parser Service
     const parserServices = ESLintUtils.getParserServices(context);
-    
+
+    //console.log(parserServices.program.getSourceFiles().map(e=>e.fileName).join("\n"))
     // Report the load fail
     if (!parserServices || !parserServices.program) {
       console.error("Failed to load ");
       // If parserServices is not available, return an empty object
       return {};
     }
-
+    
+    // Get the type checker 
+    const checker = parserServices.program.getTypeChecker();
+    
+    console.log( /*checker.getSymbolAtLocation()*/);
     return {
       "Program:exit"(){
         PROGRAM_CONTEXT.resolveAll('no-privilege');
@@ -85,9 +90,11 @@ export default createRule<any[], keyof typeof MESSAGES>({
         const method = PROGRAM_CONTEXT.getMethodByScope(scope);        
         if(!method) return;
 
-
         // 1. Find the TS type for the ES node
         const calleeType = parserServices.getTypeAtLocation(node.callee);
+
+       console.log(context.filename,calleeType.getSymbol()?.getJsDocTags());
+
 
         // Add method for after resolve operation
         if(!isNative(calleeType.symbol)) {
@@ -98,10 +105,12 @@ export default createRule<any[], keyof typeof MESSAGES>({
 
         const privilege = getPrivileges(calleeType.symbol);
 
+        // If function declaration is available then merge privileges
         if(scope.hasDeclaration) {
-          scope.executionPrivilege.marge(privilege);
+          scope.executionPrivilege.merge(privilege);
           return;
         }
+        // Else register for later resolve 
         else if(scope.executionPrivilege.canExecute(privilege)){
           return;
         }

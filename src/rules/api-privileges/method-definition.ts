@@ -126,7 +126,7 @@ export class ProgramContext<C extends Readonly<RuleContext<string, any[]>>>{
                         }
                     })
                 }
-                else method.scope?.executionPrivilege.marge(call.definition.scope?.executionPrivilege);
+                else method.scope?.executionPrivilege.merge(call.definition.scope?.executionPrivilege);
             }
         }
 
@@ -138,6 +138,7 @@ export function isNative(parent: Type["symbol"]){
     //Check for the root symbol to match a native lib names
     while((parent as any)?.parent?.escapedName?.includes?.("@minecraft/") === false) parent = (parent as any)?.parent;
     // Check if we success with founding root parent
+
     return !!((parent as any)?.parent);
 }
 export function getPrivileges(parent: Type["symbol"]){

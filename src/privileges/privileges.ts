@@ -28,7 +28,7 @@ export class Privilege {
         }
     }
     public has(type: PrivilegeType){return this.privilegeTypes.has(type);}
-    public marge(privilege: Privilege){
+    public merge(privilege: Privilege){
         if(this.has(PrivilegeType.All)) {
             this.privilegeTypes = new Set(privilege.privilegeTypes);
             return;

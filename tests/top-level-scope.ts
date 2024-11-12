@@ -10,3 +10,9 @@ await null;
 // SHOULDN'T ERROR
 // DEFAULT PRIVILEGE
 BlockPermutation.resolve("bedrock");
+
+export const RES = BlockPermutation.resolve;
+
+export function RESOLVE(test: string){
+    BlockPermutation.resolve(test);
+}

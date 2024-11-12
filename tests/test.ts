@@ -25,6 +25,7 @@ async function MethodThatAwaitsAndCallsMethodThatCallsAPI(){
     MethodCallsAPI();
 }
 
+/// @privilege-node
 function MethodCallsAPI(){
     BlockPermutation.resolve("bedrock");
     
