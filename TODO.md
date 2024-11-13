@@ -24,7 +24,7 @@
   - [ ] **Setup Guide**: Create preliminary setup guide for the beta version to help testers understand the new features.
  - [ ] **Community Engagement**: Engage with the community to gather feedback and suggestions for further improvements.
 
-
+ 
 - [ ] **Release Stable Version** *(Stage 5)*
   - [ ] **User Feedback**: Collect detailed feedback from beta users to understand their experience and any problems they encountered.
   - [ ] **Bug Fixes & Improvements**: Address any identified bugs and make necessary improvements based on feedback.

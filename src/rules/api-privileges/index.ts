@@ -1,8 +1,9 @@
-import { Symbol, Type } from 'typescript';
+import { Symbol, SyntaxKind, Type } from 'typescript';
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
 import { ScopeDefinition, Privilege, PrivilegeType } from '../../privileges';
 import { CalleeRef, getPrivileges, isNative, MethodDefinition, ProgramContext } from './method-definition';
 import type { RuleContext } from '@typescript-eslint/utils/dist/ts-eslint';
+import { traverse } from './resolver';
 // import { MetadataLoader } from '../metadata';
 
 // Required messages for this rule
@@ -93,8 +94,20 @@ export default createRule<any[], keyof typeof MESSAGES>({
         // 1. Find the TS type for the ES node
         const calleeType = parserServices.getTypeAtLocation(node.callee);
 
-       console.log(context.filename,calleeType.getSymbol()?.getJsDocTags());
+        //console.log(context.filename,calleeType.getSymbol()?.getJsDocTags());
+        //console.log(SyntaxKind[calleeType.getSymbol()?.valueDeclaration?.kind??0]);
+        const tsNode = calleeType.symbol.valueDeclaration;
 
+        if(tsNode){
+          traverse(tsNode, {
+            [SyntaxKind.CallExpression](node){
+              console.log(SyntaxKind[node.kind],node.getText());
+            },
+            [SyntaxKind.CallSignature](node){
+              console.log(SyntaxKind[node.kind],node.getText());
+            }
+          });
+        }
 
         // Add method for after resolve operation
         if(!isNative(calleeType.symbol)) {

@@ -45,7 +45,7 @@ export type BaseMetadataType =
     MetadataTypeIteratorResult;
 
 export type MetadataType = {is_bind_type: boolean, is_errorable: boolean, name: MetadataTypeName} & BaseMetadataType;
-export type MetadataFunctionArgumentDetialsDefinition = null | ({default_value: unknown} | (Range<number, number> & {default_value: unknown}))
+export type MetadataFunctionArgumentDetailsDefinition = null | ({default_value: unknown} | (Range<number, number> & {default_value: unknown}))
 
 export interface MetadataModuleBaseDefinition extends MetadataDefinition{
     version: string;
@@ -70,7 +70,7 @@ export interface MetadataPropertyMemberDefinition extends MetadataMemberDefiniti
 
 
 export interface MetadataFunctionArgumentDefinition extends MetadataDefinition, MetadataTypedDefinition{
-    details: MetadataFunctionArgumentDetialsDefinition;
+    details: MetadataFunctionArgumentDetailsDefinition;
 }
 export interface MetadataFunctionDefinition extends Omit<MetadataMemberDefinition, "is_read_only">, MetadataPriviligedDefinition {
     arguments: MetadataFunctionArgumentDefinition[];
