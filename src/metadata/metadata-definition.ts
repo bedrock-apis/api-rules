@@ -2,13 +2,9 @@
  * https://github.com/bedrock-apis/bds-docs/blob/main/src/flags/ts-declarations/ScriptModule.d.ts
  */
 
-export enum PrivilegeType {
-    None = 'none',
-    Readonly = 'read_only',
-    EarlyExecution = 'early_execution',
-}
+export type Privileges = 'none' | 'read_only' | 'early_execution';
 
-export type Privilege = { name: PrivilegeType }[];
+export type Privilege = { name: Privileges }[];
 
 export interface MetadataDefinition { name: string; }
 export interface MetadataTypedDefinition { type: MetadataType; }

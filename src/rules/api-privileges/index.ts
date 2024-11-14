@@ -4,7 +4,7 @@ import { ScopeDefinition, Privilege, PrivilegeType } from '../../privileges';
 import { CalleeRef, getPrivileges, isNative, MethodDefinition, ProgramContext } from './method-definition';
 import type { RuleContext } from '@typescript-eslint/utils/dist/ts-eslint';
 import { traverse } from './resolver';
-// import { MetadataLoader } from '../metadata';
+import { MetadataLoader } from '../../metadata';
 
 // Required messages for this rule
 const MESSAGES = {
@@ -51,6 +51,8 @@ export default createRule<any[], keyof typeof MESSAGES>({
     
     // Get the type checker 
     const checker = parserServices.program.getTypeChecker();
+
+    const loader = new MetadataLoader();
     
     console.log( /*checker.getSymbolAtLocation()*/);
     return {
