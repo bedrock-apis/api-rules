@@ -103,8 +103,6 @@ export class ProgramContext<C extends Readonly<RuleContext<string, any[]>>>{
             method.isResolved = true;
             return;
         }
-        console.warn("method: " + method.symbol?.name);
-        console.warn("methods: " + [...method.calls].map(e=>e.definition.symbol?.name).join(", "));
         recursive_ness.add(method);
         for(const call of method.calls){
             if(!call.definition.isResolved){

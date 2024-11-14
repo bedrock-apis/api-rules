@@ -1,10 +1,13 @@
 import { Node, SyntaxKind } from "typescript";
 
-export function traverse(node: Node, handler: {[key: number]: (node: Node)=>void}){
-    const r = Math.floor(Math.random() * 10);
-    visit(node, (node)=>handler[node.kind as number]?.(node));
+
+type OnlyNumber<T> = T extends Number ? T : never;
+
+// Walk thru the TS AST Tree
+export function traverse<T extends OnlyNumber<SyntaxKind>>(node: Node, handler: {[key in T]: (node: Node)=>void}){
+    visit(node, (node)=>handler[node.kind as T]?.(node));
 }
-function visit(node: Node, caller: (node: Node)=>void){
+export function visit(node: Node, caller: (node: Node)=>void){
     caller(node);
     node.forEachChild((node)=>visit(node, caller));
 }

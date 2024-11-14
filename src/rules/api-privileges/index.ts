@@ -1,4 +1,4 @@
-import { Symbol, SyntaxKind, Type } from 'typescript';
+import ts, { Symbol, SyntaxKind, Type } from 'typescript';
 import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
 import { ScopeDefinition, Privilege, PrivilegeType } from '../../privileges';
 import { CalleeRef, getPrivileges, isNative, MethodDefinition, ProgramContext } from './method-definition';
@@ -34,7 +34,6 @@ export default createRule<any[], keyof typeof MESSAGES>({
         messages: MESSAGES
     },
   create(context) {
-    console.log("New context created");
     // Create New Context
     const PROGRAM_CONTEXT = new ProgramContext(context);
 
@@ -48,7 +47,8 @@ export default createRule<any[], keyof typeof MESSAGES>({
       // If parserServices is not available, return an empty object
       return {};
     }
-    
+    console.log("\x1b[35mResolve:\n  - " + context.filename,"\x1b[0m");
+    console.log("\x1b[35mDependencies:\n  - " + parserServices.program.getSourceFile(context.filename)?.fileName,"\x1b[0m");
     // Get the type checker 
     const checker = parserServices.program.getTypeChecker();
 
@@ -58,6 +58,7 @@ export default createRule<any[], keyof typeof MESSAGES>({
     return {
       "Program:exit"(){
         PROGRAM_CONTEXT.resolveAll('no-privilege');
+        console.log("\n");
       },
       "Program"(node){
         //Create Hardcoded Scope
@@ -103,10 +104,10 @@ export default createRule<any[], keyof typeof MESSAGES>({
         if(tsNode){
           traverse(tsNode, {
             [SyntaxKind.CallExpression](node){
-              console.log(SyntaxKind[node.kind],node.getText());
+              console.log("\x1b[35m",SyntaxKind[node.kind],"\x1b[0m" + node.getText());
             },
             [SyntaxKind.CallSignature](node){
-              console.log(SyntaxKind[node.kind],node.getText());
+              console.log(SyntaxKind[node.kind], node.getText());
             }
           });
         }

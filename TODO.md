@@ -15,7 +15,8 @@
 - [ ] **Release Alpha Version** *(Stage 3)*
   - [X] **Implement `test` Logic for Native APIs**: Develop the `test` logic, for API functions calls.
   - [X] **Add More Specific Tests**: Add basic tests for cases where it should error and where not
-  - [ ] **Release**
+  - [ ] **Move To TS AST**: When we migrate to TS AST Nodes then we don't have to rely on ESLint execution timing.
+  - [ ] **Release Alpha Version With Hardcoded Metadata**
 
 - [ ] **Release Beta Version** *(Stage 4)*
   - [X] **Implement Async Execution Handling**: Add support for async commands using `await null;` expressions to enforce asynchronous execution.
