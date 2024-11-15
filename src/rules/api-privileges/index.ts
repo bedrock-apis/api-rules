@@ -1,10 +1,5 @@
-import ts, { Symbol, SyntaxKind, Type } from 'typescript';
-import { ESLintUtils, TSESTree } from '@typescript-eslint/utils';
-import { ScopeDefinition, Privilege, PrivilegeType } from '../../privileges';
-import { CalleeRef, getPrivileges, isNative, MethodDefinition, ProgramContext } from './method-definition';
-import type { RuleContext } from '@typescript-eslint/utils/dist/ts-eslint';
-import { traverse } from './resolver';
-import { MetadataLoader } from '../../metadata';
+import { ESLintUtils } from '@typescript-eslint/utils';
+import { ProgramContext } from './program-context';
 
 // Required messages for this rule
 const MESSAGES = {
@@ -24,6 +19,8 @@ const createRule = ESLintUtils.RuleCreator<typeof DOCS>(
   name => `https://example.com/rule/${name}`,
 );
 
+let RULE_CONTEXT: null | ProgramContext = null;
+
 // Export our rule
 export default createRule<any[], keyof typeof MESSAGES>({
     name: "",
@@ -34,54 +31,40 @@ export default createRule<any[], keyof typeof MESSAGES>({
         messages: MESSAGES
     },
   create(context) {
-    // Create New Context
-    const PROGRAM_CONTEXT = new ProgramContext(context);
-
-    // Get Parser Service
     const parserServices = ESLintUtils.getParserServices(context);
-
-    //console.log(parserServices.program.getSourceFiles().map(e=>e.fileName).join("\n"))
-    // Report the load fail
-    if (!parserServices || !parserServices.program) {
-      console.error("Failed to load ");
-      // If parserServices is not available, return an empty object
-      return {};
+    // Global Rule Context
+    if(!RULE_CONTEXT) {
+      RULE_CONTEXT = new ProgramContext(parserServices.program);
     }
-    console.log("\x1b[35mResolve:\n  - " + context.filename,"\x1b[0m");
-    console.log("\x1b[35mDependencies:\n  - " + parserServices.program.getSourceFile(context.filename)?.fileName,"\x1b[0m");
-    // Get the type checker 
-    const checker = parserServices.program.getTypeChecker();
 
-    const loader = new MetadataLoader();
+    // Local Variable
+    // No longer optional
+    const rule_context = RULE_CONTEXT;
     
     console.log( /*checker.getSymbolAtLocation()*/);
     return {
-      "Program:exit"(){
-        PROGRAM_CONTEXT.resolveAll('no-privilege');
-        console.log("\n");
-      },
-      "Program"(node){
-        //Create Hardcoded Scope
-        const scope = PROGRAM_CONTEXT.setTopLevel(node);
-        // Set scope execution privilege
-        scope.executionPrivilege = new Privilege(PrivilegeType.EarlyExecution);
-      },
-      "FunctionDeclaration"(node){
-        // 1. Find the TS type for this Function Declaration
-        const type = parserServices.getTypeAtLocation(node);
-        
-        //Create Scope
-        const scope = PROGRAM_CONTEXT.tryCreate(node, type.symbol);
+        "Program:exit"(node){
+          const srcFile = parserServices.esTreeNodeToTSNodeMap.get(node);
+          for(const node of rule_context.resolve(srcFile)){
+            const expression = parserServices.tsNodeToESTreeNodeMap.get(node);
+            const type = parserServices.getTypeAtLocation(expression);
+            context.report({
+              node: expression,
+              messageId: "no-privilege",
+              data:{
+                "method-name":type?.symbol?.name
+              }
+            });
+          }
+        }
+    };
+  },
+  defaultOptions: []
+});
 
-        // Assign required properties
-        scope.hasDeclaration = true;
-        scope.executionPrivilege = new Privilege(PrivilegeType.All);
-      },
-      "AwaitExpression"(node){
-        const scope = PROGRAM_CONTEXT.getScope(node);
-        if(!scope) return;
-        scope.hasBeenAwaited = true;
-      },
+/**
+ * 
+ * 
       // This expression is general for calls
       "CallExpression"(node){
         const scope = PROGRAM_CONTEXT.getScope(node);
@@ -141,8 +124,20 @@ export default createRule<any[], keyof typeof MESSAGES>({
             "method-name": calleeType.symbol.name,
           }
         });
-      }
-    };
-  },
-  defaultOptions: []
-});
+      "FunctionDeclaration"(node){
+        // 1. Find the TS type for this Function Declaration
+        const type = parserServices.getTypeAtLocation(node);
+        
+        //Create Scope
+        const scope = PROGRAM_CONTEXT.tryCreate(node, type.symbol);
+
+        // Assign required properties
+        scope.hasDeclaration = true;
+        scope.executionPrivilege = new Privilege(PrivilegeType.All);
+      },
+      "AwaitExpression"(node){
+        const scope = PROGRAM_CONTEXT.getScope(node);
+        if(!scope) return;
+        scope.hasBeenAwaited = true;
+      },
+ */

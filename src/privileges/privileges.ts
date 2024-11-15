@@ -46,23 +46,3 @@ export class Privilege {
     }
     public constructor(...privilegeTypes: PrivilegeType[]){this.privilegeTypes = new Set(privilegeTypes);}
 }
-
-export class ScopeDefinition {
-    // If this method hasDeclaration
-    public hasDeclaration: boolean = false;
-    // If in the decleration has been used await
-    public hasBeenAwaited: boolean = false;
-    // Privilege
-    public executionPrivilege: Privilege = new Privilege();
-    // Symbol
-    public symbol?: Type["symbol"];
-    // AST Node
-    public node: TSESTree.Node;
-
-    public constructor(node: TSESTree.Node){
-        this.node = node;
-    }
-    public toString(){
-        return `[Object Privilege: {${[...this.executionPrivilege.privilegeTypes].join(", ")}}]`
-    }
-}
