@@ -17,7 +17,7 @@ export class ProgramFile{
      * @returns Whenever this expression should be reported
      */
     private [SyntaxKind.CallExpression](node: CallExpression): boolean{
-
+        console.log("Call it depression.");
         return false;
     }
     /**
@@ -26,7 +26,7 @@ export class ProgramFile{
      * @returns Whenever this expression should be reported
      */
     private [SyntaxKind.AwaitExpression](node: AwaitExpression): boolean{
-
+        console.log("Await Depression.")
         return false;
     }
     /**
