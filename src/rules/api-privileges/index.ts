@@ -34,7 +34,7 @@ export default createRule<any[], keyof typeof MESSAGES>({
     const parserServices = ESLintUtils.getParserServices(context);
     // Global Rule Context
     if(!RULE_CONTEXT) {
-      RULE_CONTEXT = new ProgramContext(parserServices.program);
+      RULE_CONTEXT = new ProgramContext(parserServices.program, parserServices);
     }
 
     // Local Variable
@@ -44,6 +44,7 @@ export default createRule<any[], keyof typeof MESSAGES>({
     console.log( /*checker.getSymbolAtLocation()*/);
     return {
         "Program:exit"(node){
+          console.log(context.filename);
           const srcFile = parserServices.esTreeNodeToTSNodeMap.get(node);
           for(const node of rule_context.resolve(srcFile)){
             const expression = parserServices.tsNodeToESTreeNodeMap.get(node);

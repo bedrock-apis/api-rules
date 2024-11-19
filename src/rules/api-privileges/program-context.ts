@@ -1,5 +1,6 @@
-import {Node, Program, SourceFile} from "typescript";
+import {Node, Program, SourceFile, TypeChecker} from "typescript";
 import { ProgramFile } from "./program-file";
+import { ParserServicesWithTypeInformation, TSESTree } from "@typescript-eslint/utils";
 
 export class ProgramContext{
     /**
@@ -11,10 +12,23 @@ export class ProgramContext{
      */
     public readonly program: Program;
     /**
+     * TS Service
+     */
+    public readonly service: ParserServicesWithTypeInformation;
+    /**
+     * TS Checker
+     */
+    public readonly checker: TypeChecker;
+    /**
      * @param program TS Program Source
      */
-    public constructor(program: Program){
+    public constructor(program: Program, service: ParserServicesWithTypeInformation){
         this.program = program;
+        this.service = service;
+        this.checker = service.program.getTypeChecker();
+    }
+    public getType(node: Node){
+        return this.checker.getTypeAtLocation(node);
     }
     /**
      * @param src Source file to resolve 

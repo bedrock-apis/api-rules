@@ -1,4 +1,4 @@
-import { AwaitExpression, CallExpression, Node, SourceFile, SyntaxKind } from "typescript";
+import { ArrowFunction, AwaitExpression, CallExpression, FunctionDeclaration, Block, MethodDeclaration, Node, SourceFile, SyntaxKind } from "typescript";
 import { ProgramContext } from "./program-context";
 import { ProgramScope } from "./program-scope";
 import { ThruWalker } from "./program-utils";
@@ -11,13 +11,22 @@ export class ProgramFile{
         this.context = context;
         this.sourceFile = src;
     }
+    private [SyntaxKind.MethodDeclaration](node: MethodDeclaration){return this.scopeDeclaration(node);}
+    private [SyntaxKind.FunctionDeclaration](node: FunctionDeclaration){return this.scopeDeclaration(node);}
+    private [SyntaxKind.ArrowFunction](node: ArrowFunction){return this.scopeDeclaration(node);}
+    private scopeDeclaration(node: ArrowFunction | MethodDeclaration | FunctionDeclaration): boolean{
+        console.log(node.body);
+        return false;
+    }
     /**
      * 
      * @param node Received Input
      * @returns Whenever this expression should be reported
      */
     private [SyntaxKind.CallExpression](node: CallExpression): boolean{
-        console.log("Call it depression.");
+        //const type = this.context.getType();
+        console.log(this.context.getType(node.expression).symbol?.name);
+        //console.log("Call Depression: ", (globalThis as any)?.symbol?.name??node.getText());
         return false;
     }
     /**
