@@ -1,8 +1,10 @@
 import {Node, Program, SourceFile, TypeChecker} from "typescript";
 import { ProgramFile } from "./program-file";
 import { ParserServicesWithTypeInformation, TSESTree } from "@typescript-eslint/utils";
+import { MethodDefinition } from "./method-definition";
 
 export class ProgramContext{
+    public readonly upperScope = new WeakMap<Node, MethodDefinition>();
     /**
      * Cached files
      */
