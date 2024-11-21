@@ -3,7 +3,7 @@ import { Privilege } from "../../privileges";
 
 export class ProgramScope {
     // If this method hasDeclaration
-    public hasDeclaration: boolean = false;
+    public isHardCoded: boolean = false;
     // If in the declaration has been used await
     public hasBeenAwaited: boolean = false;
     // Privilege

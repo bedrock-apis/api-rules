@@ -40,7 +40,7 @@ export class Privilege {
 
         if(this.privilegeTypes.size <= 0) this.privilegeTypes.add(PrivilegeType.None);
     }
-    public addPriviledgeType(priviledgeType: PrivilegeType){
+    public addPrivilegeType(priviledgeType: PrivilegeType){
         // Add new PrivilegeType to the set
         this.privilegeTypes.add(priviledgeType);
     }

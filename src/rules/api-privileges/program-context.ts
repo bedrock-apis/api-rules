@@ -1,10 +1,12 @@
-import {Node, Program, SourceFile, TypeChecker} from "typescript";
+import {Node, Program, SourceFile, Symbol, TypeChecker} from "typescript";
 import { ProgramFile } from "./program-file";
 import { ParserServicesWithTypeInformation, TSESTree } from "@typescript-eslint/utils";
-import { MethodDefinition } from "./method-definition";
+import { ProgramMethodSymbol } from "./program-method-symbol";
+import { PrivilegeType } from "../../privileges";
 
 export class ProgramContext{
-    public readonly upperScope = new WeakMap<Node, MethodDefinition>();
+    public readonly metadata: WeakMap<Symbol, ProgramMethodSymbol> = new WeakMap();
+
     /**
      * Cached files
      */
@@ -29,9 +31,30 @@ export class ProgramContext{
         this.service = service;
         this.checker = service.program.getTypeChecker();
     }
-    public getType(node: Node){
-        return this.checker.getTypeAtLocation(node);
+
+    public getType(node: Node){ return this.checker.getTypeAtLocation(node); }
+    public getSymbol(node: Node){ return this.checker.getSymbolAtLocation(node)??null; }
+    public getMethodSymbol(symbol: Symbol){ return this.metadata.get(symbol)??null; }
+
+    public getOrCreateMethodSymbolFromSymbolsJSDocs(symbol: Symbol): ProgramMethodSymbol {
+        let mSymbol = this.getMethodSymbol(symbol);
+        // Maybe it wa already 
+        if(mSymbol) return mSymbol;
+        mSymbol = new ProgramMethodSymbol(symbol);
+
+        for(const tag of symbol.getJsDocTags()){
+            if(tag.name.toLocaleLowerCase() === "apiprivilege"){
+                console.log("resolved for: " + symbol.name);
+                mSymbol.resolvablePrivilege.addPrivilegeType(PrivilegeType.ReadOnly);
+            }
+        }
+
+
+        this.metadata.set(symbol, mSymbol);
+
+        return mSymbol;
     }
+    
     /**
      * @param src Source file to resolve 
      * @returns Iterator of nodes and diagnostics
@@ -49,9 +72,6 @@ export class ProgramContext{
         // Create new program file if its the first time
         if(!file) file = new ProgramFile(this, srcFile);
 
-        yield * file.resolve();
-
-        //All was successful
-        return true;
+        return yield * file.resolve();;
     }
 }
