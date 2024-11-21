@@ -1,10 +1,10 @@
-import { ArrowFunction, AwaitExpression, CallExpression, FunctionDeclaration, Block, MethodDeclaration, Node, SourceFile, SyntaxKind } from "typescript";
+import { ArrowFunction, AwaitExpression, CallExpression, FunctionDeclaration, Block, MethodDeclaration, Node, SourceFile, SyntaxKind, flattenDiagnosticMessageText } from "typescript";
 import { ProgramContext } from "./program-context";
 import { ProgramScope } from "./program-scope";
 import { ThruWalker } from "./program-utils";
 
 export class ProgramFile{
-    public readonly scopes: WeakMap<Node, ProgramScope> = new WeakMap();
+    private readonly scopes: WeakMap<Node, ProgramScope> = new WeakMap();
     public readonly context: ProgramContext;
     public readonly sourceFile: SourceFile;
     public constructor(context: ProgramContext, src: SourceFile){
@@ -14,29 +14,45 @@ export class ProgramFile{
     private [SyntaxKind.MethodDeclaration](node: MethodDeclaration){return this.scopeDeclaration(node);}
     private [SyntaxKind.FunctionDeclaration](node: FunctionDeclaration){return this.scopeDeclaration(node);}
     private [SyntaxKind.ArrowFunction](node: ArrowFunction){return this.scopeDeclaration(node);}
-    private scopeDeclaration(node: ArrowFunction | MethodDeclaration | FunctionDeclaration): boolean{
-        console.log(node.body);
-        return false;
+    private scopeDeclaration(node: ArrowFunction | MethodDeclaration | FunctionDeclaration): Node | null{
+        const programScope = new ProgramScope(node);
+        this.scopes.set(node, programScope);
+        return null;
     }
     /**
-     * 
      * @param node Received Input
      * @returns Whenever this expression should be reported
      */
-    private [SyntaxKind.CallExpression](node: CallExpression): boolean{
+    private [SyntaxKind.CallExpression](node: CallExpression): Node | null{
+        const scope = this.scopes.get(this.findScopeFor(node)??node);
+        if(!scope) return null;
+
+        if(scope.hasBeenAwaited) return null;
+
+        const src = this.context.getType(node.expression).symbol.valueDeclaration?.getSourceFile();
+        if(src && src !== this.sourceFile){
+            if(src.isDeclarationFile) {
+                return node.expression;
+            }
+            return null;
+        }
         //const type = this.context.getType();
-        console.log(this.context.getType(node.expression).symbol?.name);
-        //console.log("Call Depression: ", (globalThis as any)?.symbol?.name??node.getText());
-        return false;
+        //const scope = this.findScopeFor(node);
+        //if(!scope) return null;
+        console.log("Call Depression: ", this.context.getType(node.expression).symbol.name);
+        return null;
     }
     /**
      * 
      * @param node Received Input
      * @returns Whenever this expression should be reported
      */
-    private [SyntaxKind.AwaitExpression](node: AwaitExpression): boolean{
-        console.log("Await Depression.")
-        return false;
+    private [SyntaxKind.AwaitExpression](node: AwaitExpression): Node | null{
+        const scope = this.scopes.get(this.findScopeFor(node)??node);
+        if(!scope) return null;
+
+        scope.hasBeenAwaited = true;
+        return null;
     }
     /**
      * @param src Source file to resolve 
@@ -45,10 +61,11 @@ export class ProgramFile{
     public * resolve(): Generator<Node, boolean>{
         for(const node of ThruWalker(this.sourceFile)){
             if(node.kind in this){
-                if(this[node.kind as (
+                const mapped = this[node.kind as (
                     SyntaxKind.AwaitExpression | 
                     SyntaxKind.CallExpression
-                )](node as any)) yield node;
+                )](node as any);
+                if(mapped) yield mapped;
             }
         }
         //All was successful
@@ -63,7 +80,7 @@ export class ProgramFile{
      * @param node Node to check in where this node is
      * @returns Parent node of the scope, null if no scope was found.
      */
-    public inScopeOf(node: Node): Node | null{
+    public findScopeFor(node: Node): Node | null{
         let parent = node.parent;
 
         // Recursive walk thru
