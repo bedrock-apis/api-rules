@@ -1,16 +1,13 @@
-import {Node, Program, SourceFile, Symbol, TypeChecker} from "typescript";
+import { Program, SourceFile, Symbol, TypeChecker } from "typescript";
+import { Privilege } from "../../privileges";
 import { ProgramFile } from "./program-file";
-import { ParserServicesWithTypeInformation, TSESTree } from "@typescript-eslint/utils";
-import { ProgramMethodSymbol } from "./program-method-symbol";
-import { PrivilegeType } from "../../privileges";
+import { ProgramDiagnosticsReport } from "./diagnostics";
+import { ParserServicesWithTypeInformation } from "@typescript-eslint/utils";
 
 export class ProgramContext{
-    public readonly metadata: WeakMap<Symbol, ProgramMethodSymbol> = new WeakMap();
 
-    /**
-     * Cached files
-     */
-    public readonly programFiles: WeakMap<SourceFile, ProgramFile> = new WeakMap();
+    public readonly files = new Map<SourceFile, ProgramFile>();
+    public readonly resolvedPrivileges = new Map<Symbol, Privilege>();
     /**
      * TS Program
      */
@@ -31,47 +28,13 @@ export class ProgramContext{
         this.service = service;
         this.checker = service.program.getTypeChecker();
     }
-
-    public getType(node: Node){ return this.checker.getTypeAtLocation(node); }
-    public getSymbol(node: Node){ return this.checker.getSymbolAtLocation(node)??null; }
-    public getMethodSymbol(symbol: Symbol){ return this.metadata.get(symbol)??null; }
-
-    public getOrCreateMethodSymbolFromSymbolsJSDocs(symbol: Symbol): ProgramMethodSymbol {
-        let mSymbol = this.getMethodSymbol(symbol);
-        // Maybe it wa already 
-        if(mSymbol) return mSymbol;
-        mSymbol = new ProgramMethodSymbol(symbol);
-
-        for(const tag of symbol.getJsDocTags()){
-            if(tag.name.toLocaleLowerCase() === "apiprivilege"){
-                console.log("resolved for: " + symbol.name);
-                mSymbol.resolvablePrivilege.addPrivilegeType(PrivilegeType.ReadOnly);
-            }
-        }
-
-
-        this.metadata.set(symbol, mSymbol);
-
-        return mSymbol;
+    public reportDiagnostics(diagnostics: ProgramDiagnosticsReport){
+        const file = this.openFile(diagnostics.node.getSourceFile());
+        file.diagnostics.set(diagnostics.node, diagnostics);
     }
-    
-    /**
-     * @param src Source file to resolve 
-     * @returns Iterator of nodes and diagnostics
-     */
-    public * resolve(src: SourceFile): Generator<Node, boolean>{
-        let srcFile: SourceFile | undefined = src; 
-        srcFile = this.program.getSourceFile(src.fileName);
-        
-        //Check if the source file is valid and its part of this context
-        if(!srcFile) return false;
-        
-        //Try to get this source file
-        let file = this.programFiles.get(srcFile);
-
-        // Create new program file if its the first time
-        if(!file) file = new ProgramFile(this, srcFile);
-
-        return yield * file.resolve();;
+    public openFile(srcFile: SourceFile){
+        let file = this.files.get(srcFile);
+        if(!file) this.files.set(srcFile, file = new ProgramFile(srcFile, this));
+        return file;
     }
 }

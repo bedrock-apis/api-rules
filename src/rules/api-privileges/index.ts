@@ -15,7 +15,7 @@ const DOCS = {
 // Rule helper
 // This rule helper, improves the created context and binds it to TS AST tree,
 // so we can refer types for specific nodes
-const createRule = ESLintUtils.RuleCreator<typeof DOCS>(
+const createRule: ReturnType<(typeof ESLintUtils)["RuleCreator"]> = ESLintUtils.RuleCreator<typeof DOCS>(
   name => `https://example.com/rule/${name}`,
 );
 
@@ -40,20 +40,25 @@ export default createRule<any[], keyof typeof MESSAGES>({
     // Local Variable
     // No longer optional
     const rule_context = RULE_CONTEXT;
-    
-    console.log( /*checker.getSymbolAtLocation()*/);
     return {
         "Program:exit"(node){
-          console.log(context.filename);
           const srcFile = parserServices.esTreeNodeToTSNodeMap.get(node);
-          for(const node of rule_context.resolve(srcFile)){
-            const expression = parserServices.tsNodeToESTreeNodeMap.get(node);
-            const type = parserServices.getTypeAtLocation(expression);
+          const data = rule_context.openFile(srcFile);
+
+          // Loop all diagnostics
+          for(const diagnostics of data.resolve()){
+
+            // Get eslint node
+            const expression = parserServices.tsNodeToESTreeNodeMap.get(diagnostics.node);
+
+            // Report privilege error for this noe
             context.report({
               node: expression,
               messageId: "no-privilege",
               data:{
-                "method-name":type?.symbol?.name
+                "method-name":diagnostics.symbol.name,
+                "required-privilege":diagnostics.requiredPrivilege,
+                "has-privilege":diagnostics.currentPrivilege,
               }
             });
           }
@@ -61,7 +66,7 @@ export default createRule<any[], keyof typeof MESSAGES>({
     };
   },
   defaultOptions: []
-});
+}) as unknown as {name: string, meta: object, create(context: any): any};
 
 /**
  * 

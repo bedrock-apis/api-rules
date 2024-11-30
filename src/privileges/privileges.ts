@@ -1,6 +1,3 @@
-import type { Type } from "typescript";
-import type { TSESTree } from '@typescript-eslint/utils';
-
 export enum PrivilegeType {
     None = 'none',
     ReadOnly = 'read_only',
@@ -12,6 +9,10 @@ export class Privilege {
     public static readonly None = ()=>new Privilege(PrivilegeType.None);
     public static readonly All = ()=>new Privilege(PrivilegeType.All);
 
+    public set(privilege: Privilege){
+        this.privilegeTypes.clear();
+        privilege.privilegeTypes.forEach(this.privilegeTypes.add.bind(this.privilegeTypes));
+    }
     public privilegeTypes: Set<PrivilegeType> = new Set();
     public canExecute(privilege: Privilege){
         // Check for all privileges and skip
@@ -40,9 +41,13 @@ export class Privilege {
 
         if(this.privilegeTypes.size <= 0) this.privilegeTypes.add(PrivilegeType.None);
     }
-    public addPrivilegeType(priviledgeType: PrivilegeType){
+    public addPrivilegeType(privilegeType: PrivilegeType){
+        if(this.privilegeTypes.has(PrivilegeType.All)){
+            this.privilegeTypes.clear();
+        }
         // Add new PrivilegeType to the set
-        this.privilegeTypes.add(priviledgeType);
+        this.privilegeTypes.add(privilegeType);
     }
     public constructor(...privilegeTypes: PrivilegeType[]){this.privilegeTypes = new Set(privilegeTypes);}
+    public toString(){return `[Privilege: ${[...this.privilegeTypes].join(", ")}]`}
 }

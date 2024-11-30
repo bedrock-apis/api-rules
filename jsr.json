@@ -1,0 +1,13 @@
+{
+    "name": "@bedrock-apis/api-rules",
+    "version": "0.1.0",
+    "license": "MIT",
+    "exports": "./src/index.ts",
+    "public":{
+        "include":[
+            "README.md",
+            "jsr.json",
+            "src/**/*.ts"
+        ]
+    }
+}
